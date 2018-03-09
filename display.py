@@ -4,6 +4,7 @@
 from time import sleep
 from datetime import datetime
 from tm1637 import TM1637
+from heweather import heweather
 import RPi.GPIO as GPIO
 import urllib2
 import json
@@ -12,7 +13,7 @@ import csv
 # GPIO口使用BCM编码
 GPIO.setmode(GPIO.BCM)
 
-# 定义按键引脚
+# 定义按键引脚（可修改）
 pin_btn = 21
 
 # 初始化按键的状态，内部上拉
@@ -21,11 +22,14 @@ GPIO.setup(pin_btn, GPIO.IN, pull_up_down = GPIO.PUD_UP)
 # 初始化按键的次数
 press_times = 1
 
-# 定义数码管引脚亮度
+# 定义数码管引脚亮度（数码管引脚和亮度请修改此处，亮度最大7.0）
 Display = TM1637(CLK=23, DIO=24, brightness=1.0)
 Display.Clear()
 
-# 定义温湿度传感器引脚
+#请在此处修改城市，讲beijing改为你所在城市的全拼
+weather = heweather('beijing')
+
+# 定义温湿度传感器引脚（可修改）
 pin_dht11 = 4
 
 # 读取城市代码csv文件
@@ -37,40 +41,6 @@ def getcitycode(csvfile,city):
             res.append(line[1])
     i = res[0]
     return i
-
-# 获取天气信息
-def getweather(citypinyin):
-    citypinyin = getcitycode('citycode.csv', citypinyin)
-    # 和风天气API
-    url = 'https://free-api.heweather.com/v5/weather?city=' + citypinyin +'&key=8a439a7e0e034cdcb4122c918f55e5f3'
-    # 用urllib2创建一个请求并得到返回结果
-    req = urllib2.Request(url)
-    resp = urllib2.urlopen(req).read()
-    # print resp
-    # print type(resp)
-    # 将json转化为Python的数据结构
-    json_data = json.loads(resp)
-    city_data=json_data['HeWeather5'][0]
-    hourly_data= json_data['HeWeather5'][0]['hourly_forecast']
-    daily_data = json_data['HeWeather5'][0]['daily_forecast']
-    pm = city_data['aqi']['city']['pm25']
-    minqw = '{1}'.format(str(daily_data[0]['date']),daily_data[0]['tmp']['min'],daily_data[0]['tmp']['max'])
-    maxqw = '{2}'.format(str(daily_data[0]['date']),daily_data[0]['tmp']['min'],daily_data[0]['tmp']['max'])
-    # print json_data
-    # 打印天气信息
-    print u'当前时间：' + daily_data[0]['date']
-    print u'城市：' + city_data['basic']['city']
-    print u'PM指数：' + city_data['aqi']['city']['pm25']
-    print u'白天天气：' + daily_data[0]['cond']['txt_d']
-    print u'夜间天气：' + daily_data[0]['cond']['txt_n']
-    print u'今天是{0}  气温：{1}°C/{2}°C'.format(str(daily_data[0]['date']),daily_data[0]['tmp']['min'],daily_data[0]['tmp']['max'])
-    print u'未来1小时天气：{0} {1}'.format(str(hourly_data[0]['date']).split()[1],hourly_data[0]['cond']['txt'])
-    print u'未来4小时天气：{0} {1}'.format(str(hourly_data[1]['date']).split()[1],hourly_data[1]['cond']['txt'])
-    print u'未来7小时天气：{0} {1}'.format(str(hourly_data[2]['date']).split()[1],hourly_data[2]['cond']['txt'])
-    print u'{0} 天气：{1}°C/{2}°C'.format(daily_data[1]['date'],daily_data[1]['tmp']['min'],daily_data[1]['tmp']['max'])
-    print u'{0} 天气：{1}°C/{2}°C'.format(daily_data[2]['date'],daily_data[1]['tmp']['min'],daily_data[2]['tmp']['max'])
-    print u'穿衣建议：' + json_data['HeWeather5'][0]['suggestion']['drsg']['txt']
-    return pm , minqw , maxqw
 
 # 获取当前DHT11温湿度传感器信息
 def gettemperature(pin_dht11):
@@ -174,7 +144,8 @@ def onPress(channel):
 GPIO.add_event_detect(pin_btn, GPIO.FALLING, callback = onPress, bouncetime = 500)
 
 try:
-    pm , minqw , maxqw = getweather('kaifeng')
+    pm = weather.PM()
+    minqw , maxqw = weather.daily()
     temperature , humidity , DHT11status = gettemperature(pin_dht11)
     getweathertimes = 0
     sensorinitial = True
@@ -204,7 +175,8 @@ try:
 # 按下三次显示天气
         if press_times == 3:
             if getweathertimes == 600:
-                pm , minqw , maxqw = getweather('kaifeng')
+                pm = weather.PM()
+                minqw , maxqw = weather.daily()
                 getweathertimes = 0
             currentpm = [ int(pm)/1000,int(pm)/100 - int(pm)/1000*10, int(pm)/10 - int(pm)/100*10, int(pm) % 10]
             currentqw=[ int(minqw)/10 - int(minqw)/100*10, int(minqw) % 10, int(maxqw)/10 - int(maxqw)/100*10, int(maxqw) % 10]
