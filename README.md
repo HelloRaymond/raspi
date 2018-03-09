@@ -1,5 +1,5 @@
 # raspi
-some interesting script for RaspberryPi
+some interesting scripts for RaspberryPi
 
 这是一个简单的用于树莓派的显示脚本，需要硬件有：树莓派主机、tm1637驱动的数码管、DHT11温湿度传感器。
 tm1637.py 为 tm1637的驱动程序，heweather.py 用于获取天气信息 ，display.py 为脚本主程序。
