@@ -106,7 +106,7 @@ def gettemperature(pin_dht11):
     return temperature , humidity , DHT11status
     
 # 获取当前时间
-def getgetnowtime():
+def getnowtime():
     hour = datetime.now().hour
     minute = datetime.now().minute
     second = datetime.now().second
@@ -154,7 +154,7 @@ try:
     while(True):
 # 按下一次显示时间
         if press_times == 1:
-            hour , minute , second = getgetnowtime()
+            hour , minute , second = getnowtime()
             currenttime = [ int(hour / 10), hour % 10, int(minute / 10), minute % 10 ]
             Display.ShowDoublepoint(second % 2)
             Display.Show(currenttime)
